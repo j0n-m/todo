@@ -7,5 +7,15 @@
   },
   "dependencies": {
     "date-fns": "^2.30.0"
-  }
+  },
+  "name": "todo",
+  "description": "Using webpack to bundle javascript files/modules, this to do web app will utilize local storage and adhere to the guidelines of high cohesion and loose coupling.",
+  "version": "1.0.0",
+  "main": "webpack.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

@@ -1,0 +1,12 @@
+const domController = (() => {
+  const projectAddForm = document.querySelector('#project-add-form')
+
+  projectAddForm.addEventListener('submit', projectAdd);
+
+  function projectAdd(e) {
+    console.log('i work')
+    e.preventDefault();
+  }
+})();
+
+export default domController;

@@ -34,11 +34,11 @@ function Task(propObj) {
     return priority;
   }
 
-  return { setTitle, getTitle, setDescription, getDescription, setDueDate, getDueDate, setPriority, getPriority };
+  return { setTitle, getTitle, setDescription, getDescription, setDueDate, getDueDate, setPriority, getPriority, title };
 }
 function Project(propObj) {
   let title = propObj.title;
-  const tasks = [];
+  let tasks = [];
 
   function setTitle(newTitle) {
     title = newTitle;
@@ -48,6 +48,7 @@ function Project(propObj) {
   }
   function addTask(taskObj) {
     tasks.push(taskObj);
+    pubSub.publish('updateLocalStorage_task', this);
   }
   return { tasks, title, setTitle, getTitle, addTask };
 }
@@ -78,7 +79,8 @@ const todoController = (function () {
       console.log('status is', status);
       return;
     }
-    projects.push(Project(projObj));
+    projObj = Project(projObj);
+    projects.push(projObj);
     pubSub.publish('updateProjectList', projObj);
     console.log('current project list:', projects);
 
@@ -86,9 +88,29 @@ const todoController = (function () {
   const utility = (function () {
     let projectName = 'project';
 
+    pubSub.subscribe('updateLocalStorage_task', updateLocalStorage);
+    function updateLocalStorage(obj) {
+      // console.log('updating local storage')
+      // console.log('this', obj);
+      let oldLS = JSON.parse(localStorage.getItem(projectName));
+      console.log('oldLS', oldLS)
+      oldLS.find(p => {
+        if (p.title == obj.title) {
+          p.tasks = obj.tasks;
+        }
+      })
+      console.log('edited oldLS', oldLS);
+      localStorage.setItem(projectName, JSON.stringify(oldLS));
+      pubSub.publish('newTask', projects);
+
+
+      // localStorage.setItem(projectName, JSON.stringify(Project(obj)));
+    }
     function addToLocalStorage(obj) {
       if (!localStorage.getItem(projectName)) {
-        localStorage.setItem(projectName, JSON.stringify(obj));
+        let tempArray = [];
+        tempArray.push(Project(obj));
+        localStorage.setItem(projectName, JSON.stringify(tempArray));
         console.log('updated localstorage');
         return;
       }
@@ -119,8 +141,20 @@ const todoController = (function () {
           // projects.push(Project(convertFromLS));
         }
         convertFromLS.forEach(obj => {
-          projects.push(Project(obj));
-          pubSub.publish('updateProjectList', obj);
+          // projects.push(Object.assign(Project({}), obj));
+          let tasksArr = [];
+          obj.tasks.forEach(task => {
+            task = Task(task);
+            tasksArr.push(task);
+          })
+          let convertedProject = Project(obj);
+          convertedProject.tasks = tasksArr;
+          // convertedProject.tasks.forEach(task => {
+          //   task = Object.assign(Task({}), task);
+          // });
+          console.log('convertedProj', convertedProject);
+          projects.push(convertedProject);
+          pubSub.publish('updateProjectList', convertedProject);
         });
 
       }
@@ -139,4 +173,5 @@ const todoController = (function () {
   // todoController.addProject(Project({ title: 'test4' }));
   console.log('Projects: ', todoController.displayAllProjects())
   console.log('Projects(ALL):', todoController.projects);
+  todoController.projects[0].addTask({ title: 'dishes' })
 })();

@@ -15,25 +15,38 @@
       <h1>TODO</h1>
     </header>
     <div class="sidebar">
-      <div class="btn">All Tasks</div>
-      <div class="btn">Upcoming</div>
-      <div class="btn">Today</div>
-      <h2>Projects</h2>
-      <div class="btn">default</div>
-      <div class="btn">test</div>
-      <div class="btn">New Project</div>
-      <form action="" id="project-add-form">
-        <div class="input">
-          <label for="title">Title</label>
-          <input type="text" id="title" name="title">
-        </div>
-        <input type="submit" value="Add" id="project-add-btn">
-      </form>
+      <div class="btn-category">
+        <div class="btn category-btn">All Tasks</div>
+        <div class="btn category-btn">Upcoming</div>
+        <div class="btn category-btn">Today</div>
+      </div>
+      <h2 class="projects-header">Projects</h2>
+      <div class="project-list">
+
+      </div>
+      <div class="btn new-project-btn">New Project</div>
+      <div class="form-field hide">
+        <form action="" id="project-add-form">
+          <div class="input">
+            <label for="project-title-textbox">Title</label>
+            <input type="text" id="project-title-textbox" name="project-title-textbox">
+          </div>
+          <div class="form-btn-field">
+            <input type="submit" value="Add" id="project-add-btn">
+            <input type="button" value="Cancel" id="project-cancel-btn">
+          </div>
+        </form>
+      </div>
+      <div class="error-section">
+        <p class="error-msg"></p>
+      </div>
+
+
     </div>
     <div class="main">
       <div class="content">
 
-        <div class="color-tile priority-high">
+        <div class="color-tile">
           <div class="main-tile">
             <h1>Title</h1>
             <div class="right-side">
@@ -53,7 +66,18 @@
               <div class="btn">Edit</div>
               <div class="btn">Trash</div>
             </div>
+          </div>
+        </div>
 
+        <div class="color-tile priority-high">
+          <div class="main-tile">
+            <h1>Title</h1>
+            <div class="right-side">
+              <div class="btn">Details</div>
+              <h3>Due Date</h3>
+              <div class="btn">Edit</div>
+              <div class="btn">Trash</div>
+            </div>
           </div>
         </div>
 

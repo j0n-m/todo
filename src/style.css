@@ -1,3 +1,12 @@
+:root {
+  --default-priority-color: linear-gradient(lightgray, gray);
+  --high-priority-color: linear-gradient(red, maroon);
+  --low-priority-color: linear-gradient(yellow, rgb(199, 199, 55));
+  --error-text-color: red;
+}
+
+@import url('default.css');
+
 *,
 *::before,
 *::after {
@@ -8,6 +17,7 @@
 
 body {
   min-height: 100svh;
+  font-family: sans-serif;
 }
 
 header {
@@ -32,11 +42,34 @@ header {
   display: flex;
   flex-direction: column;
   border: 1px solid gray;
+  padding: 0 1rem;
+  gap: .6rem;
+  overflow-y: auto;
+}
+
+.sidebar .btn-category,
+.sidebar .project-list {
   padding: 1rem;
+  border: 1px solid black;
+}
+
+.sidebar .form-btn-field {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
 }
 
 .main {
   border: 1px solid blue;
+}
+
+.main .btn {
+  border: 2px solid black;
+  padding: .25em;
+  cursor: pointer;
+  background-color: rgb(204, 204, 204);
+  border-radius: 4px;
 }
 
 .content {
@@ -52,11 +85,13 @@ header {
 
 .color-tile {
   border-radius: 10px;
+  background: var(--default-priority-color);
+  box-shadow: 1px 2px 4px black;
 }
 
 .main-tile {
   background-color: rgb(228, 242, 255);
-  margin-left: 10px;
+  margin: 4px 6px;
   z-index: 100;
   display: flex;
   align-items: center;
@@ -68,20 +103,26 @@ header {
 .main-tile .right-side {
   display: flex;
   gap: .6rem;
+  align-items: center;
 }
 
 .priority-high {
-  background-color: red;
+  background: var(--high-priority-color);
 }
 
 .priority-low {
-  background-color: rgb(255, 238, 55);
+  background: var(--low-priority-color);
 }
 
 .btn:hover {
   outline: 1px solid blue;
 }
 
-form {
-  outline: 1px solid red;
+.hide {
+  display: none;
+}
+
+
+.error-msg {
+  color: var(--error-text-color);
 }

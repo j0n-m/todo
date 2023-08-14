@@ -1,5 +1,6 @@
 import dates from 'date-fns';
 import './style.css';
+import pubSub from './pubSub';
 import domController from './domController';
 
 function Task(propObj) {
@@ -50,27 +51,11 @@ function Project(propObj) {
   }
   return { tasks, title, setTitle, getTitle, addTask };
 }
-const pubSub = (function () {
-  const events = {};
-  function subscribe(eventName, func) {
-    if (!events[eventName]) {
-      events[eventName] = [];
-    }
-    events[eventName].push(func);
-  }
-  function publish(eventName, paramData) {
-    if (events[eventName]) {
-      events[eventName].forEach(e => {
-        e(paramData);
-      });
-    }
-  }
-  return { subscribe, publish }
-})();
 
 const todoController = (function () {
   const projects = [];
 
+  pubSub.subscribe('addNewProject', addProject);
   function initialize() {
     if (utility.localStorageHasItems('project')) {
       utility.restoreFromLocalStorage();
@@ -89,10 +74,13 @@ const todoController = (function () {
   function addProject(projObj) {
     console.log('adding...', projObj)
     let status = utility.addToLocalStorage(projObj);
-    if (status != false) {
-      projects.push(projObj);
+    if (status == false) {
+      console.log('status is', status);
+      return;
     }
-
+    projects.push(Project(projObj));
+    pubSub.publish('updateProjectList', projObj);
+    console.log('current project list:', projects);
 
   }
   const utility = (function () {
@@ -105,10 +93,12 @@ const todoController = (function () {
         return;
       }
       let projectList = [];
-      const lastStored = JSON.parse(localStorage.getItem('project'));
-      const lastStoredLength = lastStored.length - 1;
-      if (lastStored[lastStoredLength] && obj.title == lastStored[lastStoredLength].title) {
+      const lastStored = projects[projects.length - 1];
+      // console.log('laststored: ', lastStored);
+      // console.log('current: ', obj);
+      if (lastStored && obj.title == lastStored.title) {
         console.log('Cannot have duplicate names');
+        pubSub.publish('error-duplicate', 'Cannot have duplicate names')
         return false;
       }
       projectList = projectList.concat(lastStored, obj);
@@ -120,16 +110,18 @@ const todoController = (function () {
     function restoreFromLocalStorage() {
       if (localStorageHasItems('project')) {
         let convertFromLS = JSON.parse(localStorage.getItem('project'));
+        let tempArray = [];
         console.log('convertFromLS', convertFromLS)
         if (convertFromLS['title']) {
-          console.log('the if')
-          projects.push(Project(convertFromLS));
-        } else {
-          console.log('else')
-          convertFromLS.forEach(obj => {
-            projects.push(Project(obj));
-          });
+          tempArray.push(Project(convertFromLS));
+          convertFromLS = tempArray;
+          console.log(convertFromLS)
+          // projects.push(Project(convertFromLS));
         }
+        convertFromLS.forEach(obj => {
+          projects.push(Project(obj));
+          pubSub.publish('updateProjectList', obj);
+        });
 
       }
     }
@@ -144,7 +136,7 @@ const todoController = (function () {
 (() => {
   domController
   todoController.initialize();
-  todoController.addProject(Project({ title: 'test4' }));
-  console.log('All projects', todoController.projects);
-  console.log('Project: ', todoController.displayAllProjects())
+  // todoController.addProject(Project({ title: 'test4' }));
+  console.log('Projects: ', todoController.displayAllProjects())
+  console.log('Projects(ALL):', todoController.projects);
 })();

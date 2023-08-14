@@ -1,11 +1,64 @@
+import pubSub from "./pubSub";
+
 const domController = (() => {
+  // DOM selectors
+  const contentContainer = document.querySelector('.content');
+  let categoryBtns = document.querySelectorAll('.category-btn');
+  const projectList = document.querySelector('.project-list');
   const projectAddForm = document.querySelector('#project-add-form')
+  const newProjectBtn = document.querySelector('.new-project-btn');
+  const formContainer = document.querySelector('.form-field');
+  const formCancelBtn = document.querySelector('#project-cancel-btn');
+  const formTextbox = document.querySelector('#project-title-textbox');
+  const errorMsg = document.querySelector('.error-msg');
 
+  // Event Handlers
   projectAddForm.addEventListener('submit', projectAdd);
+  newProjectBtn.addEventListener('click', displayForm);
+  formCancelBtn.addEventListener('click', displayForm);
 
+  //Pubsub
+  pubSub.subscribe('updateProjectList', addToProjectList);
+  pubSub.subscribe('error-duplicate', displayError)
+
+  // Event Functions
+  function render() {
+    let categoryBtns = document.querySelectorAll('.category-btn');
+    console.log('called render')
+    categoryBtns.forEach(categoryBtn => {
+      categoryBtn.addEventListener('click', changeMainContent);
+    });
+  }
   function projectAdd(e) {
-    console.log('i work')
     e.preventDefault();
+    pubSub.publish('addNewProject', { title: formTextbox.value });
+    displayForm();
+  }
+  function displayForm() {
+    formTextbox.value = '';
+    formContainer.classList.toggle('hide');
+  }
+  function addToProjectList(projObj) {
+    const projectTitle = projObj.title;
+    const projectBtn = document.createElement('div');
+    projectBtn.classList.add('btn');
+    projectBtn.classList.add('category-btn');
+    projectBtn.textContent = projectTitle;
+    console.log('added to projectList:, ', projectTitle);
+
+    projectList.appendChild(projectBtn);
+    render();
+  }
+  function displayError(msg) {
+    errorMsg.textContent = msg;
+
+    setTimeout(function () {
+      errorMsg.textContent = '';
+    }, 4000)
+  }
+  function changeMainContent(e) {
+
+    console.log(e.target.textContent);
   }
 })();
 

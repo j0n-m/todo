@@ -3,6 +3,7 @@ import './style.css';
 import pubSub from './pubSub';
 import domController from './domController';
 
+
 function Task(propObj) {
   let title = propObj.title;
   let description = propObj.description;
@@ -47,8 +48,8 @@ function Project(propObj) {
     return title;
   }
   function addTask(taskObj) {
-    tasks.push(taskObj);
-    pubSub.publish('updateLocalStorage_task', this);
+    tasks.push(Task(taskObj));
+    pubSub.publish('updateLocalStorage_addTask', { task: taskObj, parent: this.title });
   }
   return { tasks, title, setTitle, getTitle, addTask };
 }
@@ -56,14 +57,18 @@ function Project(propObj) {
 const todoController = (function () {
   const projects = [];
 
-  pubSub.subscribe('addNewProject', addProject);
+  pubSub.subscribe('addNewProject', validateProject);
+
   function initialize() {
     if (utility.localStorageHasItems('project')) {
+      console.log('there is shit');
       utility.restoreFromLocalStorage();
-    } else {
-      console.log('adding default obj');
-      addProject(Project({ title: 'Default' }))
+      return;
     }
+    console.log('adding default obj');
+    validateProject({ title: 'Default' });
+
+
   }
   function displayAllProjects() {
     const projectList = [];
@@ -72,106 +77,121 @@ const todoController = (function () {
     })
     return projectList;
   }
-  function addProject(projObj) {
-    console.log('adding...', projObj)
-    let status = utility.addToLocalStorage(projObj);
-    if (status == false) {
-      console.log('status is', status);
+  function validateProject(projObj) {
+    projObj = Project(projObj);
+    // projObj = Object.assign(Project({}), projObj);
+    let status = utility.hasDuplicateTitle(projects, projObj);
+    if (status) {
+      console.log('Cannot have duplicate names');
+      pubSub.publish('error-duplicate', 'Cannot have duplicate names')
       return;
     }
-    projObj = Project(projObj);
+    addProject(projObj);
+    utility.addToLocalStorage(projObj);
+  }
+  function addProject(projObj) {
+    console.log('adding...', projObj)
     projects.push(projObj);
     pubSub.publish('updateProjectList', projObj);
-    console.log('current project list:', projects);
-
+    console.log('Updated Full List', projects);
   }
+  // function validateProjectTasksUpdate(index, updatedTasksObj) {
+  //   updatedTasksObj = Task(updatedTasksObj)
+  //   updateProjectTasks(index, updatedTasksObj)
+  // }
+  // function updateProjectTasks(index, updatedObj) {
+  //   projects[index].tasks.push(updatedObj);
+  //   pubSub.publish('newTask', projects);
+  // }
   const utility = (function () {
     let projectName = 'project';
 
-    pubSub.subscribe('updateLocalStorage_task', updateLocalStorage);
-    function updateLocalStorage(obj) {
-      // console.log('updating local storage')
-      // console.log('this', obj);
-      let oldLS = JSON.parse(localStorage.getItem(projectName));
-      console.log('oldLS', oldLS)
-      oldLS.find(p => {
-        if (p.title == obj.title) {
-          p.tasks = obj.tasks;
+    pubSub.subscribe('updateLocalStorage_addTask', updateLocalStorage_addTask);
+    function updateLocalStorage_addTask({ task, parent }) {
+      // let newTaskObj = Task(taskObj.task);
+      let parsedArray = JSON.parse(localStorage.getItem(projectName));
+      parsedArray.forEach(project => {
+        if (project.title == parent) {
+          project.tasks.push(Task(task));
         }
       })
-      console.log('edited oldLS', oldLS);
-      localStorage.setItem(projectName, JSON.stringify(oldLS));
-      pubSub.publish('newTask', projects);
-
-
-      // localStorage.setItem(projectName, JSON.stringify(Project(obj)));
+      // console.log('parray', parsedArray)
+      localStorage.setItem(projectName, JSON.stringify(parsedArray));
     }
     function addToLocalStorage(obj) {
-      if (!localStorage.getItem(projectName)) {
-        let tempArray = [];
-        tempArray.push(Project(obj));
+      let tempArray = [];
+      if (!localStorageHasItems(projectName)) {
+        tempArray.push(obj);
         localStorage.setItem(projectName, JSON.stringify(tempArray));
-        console.log('updated localstorage');
+        console.log(`Added ${obj} to localstorage`);
         return;
       }
-      let projectList = [];
-      const lastStored = projects[projects.length - 1];
-      // console.log('laststored: ', lastStored);
-      // console.log('current: ', obj);
-      if (lastStored && obj.title == lastStored.title) {
-        console.log('Cannot have duplicate names');
-        pubSub.publish('error-duplicate', 'Cannot have duplicate names')
-        return false;
-      }
-      projectList = projectList.concat(lastStored, obj);
-      localStorage.setItem('project', JSON.stringify(projectList));
+      const lastStored = getLastStoredLS(); //prevents from adding duplicate entries
+      if (lastStored.title == obj.title) return;
+
+      //append new obj to array
+      let storedArray = JSON.parse(localStorage.getItem(projectName));
+      tempArray = tempArray.concat(storedArray, obj);
+      localStorage.setItem('project', JSON.stringify(tempArray));
       console.log('updated localstorage');
+    }
+    function getLastStoredLS() {
+      let parsedObj = JSON.parse(localStorage.getItem(projectName));
+      let parsedArrayLastObj = parsedObj.length - 1;
 
-
+      return parsedObj[parsedArrayLastObj];
+    }
+    function hasDuplicateTitle(sourceList, obj) {
+      let status;
+      sourceList.forEach(project => {
+        console.log('project title:', project.title);
+        console.log('obj title:', obj.title);
+        if (project.title == obj.title) {
+          status = true;
+        }
+      })
+      return status;
     }
     function restoreFromLocalStorage() {
       if (localStorageHasItems('project')) {
-        let convertFromLS = JSON.parse(localStorage.getItem('project'));
-        let tempArray = [];
-        console.log('convertFromLS', convertFromLS)
-        if (convertFromLS['title']) {
-          tempArray.push(Project(convertFromLS));
-          convertFromLS = tempArray;
-          console.log(convertFromLS)
-          // projects.push(Project(convertFromLS));
-        }
-        convertFromLS.forEach(obj => {
-          // projects.push(Object.assign(Project({}), obj));
-          let tasksArr = [];
-          obj.tasks.forEach(task => {
-            task = Task(task);
-            tasksArr.push(task);
-          })
-          let convertedProject = Project(obj);
-          convertedProject.tasks = tasksArr;
-          // convertedProject.tasks.forEach(task => {
-          //   task = Object.assign(Task({}), task);
-          // });
-          console.log('convertedProj', convertedProject);
-          projects.push(convertedProject);
-          pubSub.publish('updateProjectList', convertedProject);
-        });
+        //an array with objects [no methods]
+        console.log('here')
+        let limitedProjObj = JSON.parse(localStorage.getItem('project'));
+        let taskArray = [];
+        // let restoredProjObj = [];
+        //restore the methods for Project and Task objs
+        limitedProjObj.forEach(project => {
+          for (let i = 0; i < project.tasks.length; i++) {
+            taskArray.push(Task(project.tasks[i]))
+          }
+          console.log('taskarr', taskArray)
+          let newProj = Project(project); //restore Project object methods
+          if (project.tasks) {
+            newProj.tasks = taskArray;
+          }
+          // restoredProjObj.push(newProj); //add the restored object to array
+          addProject(newProj) //add the restored object to array
+          console.log('restoredObj', newProj);
+          taskArray = [];
+        })
 
       }
     }
     function localStorageHasItems(key) {
       return localStorage.getItem(key);
     }
-    return { addToLocalStorage, restoreFromLocalStorage, localStorageHasItems };
+    return { addToLocalStorage, restoreFromLocalStorage, localStorageHasItems, hasDuplicateTitle };
   })();
-  return { displayAllProjects, projects, initialize, addProject, utility };
+  return { displayAllProjects, projects, initialize, utility, validateProject };
 })();
 
 (() => {
-  domController
   todoController.initialize();
-  // todoController.addProject(Project({ title: 'test4' }));
+  // domController.changeMainContent(todoController.projects[0].getTitle());
+  // todoController.projects[0].addTask({ title: 'Car wash' });
+  // todoController.projects[1].addTask({ title: 'Eat food' });
+  console.log('-------------------------------------');
   console.log('Projects: ', todoController.displayAllProjects())
   console.log('Projects(ALL):', todoController.projects);
-  todoController.projects[0].addTask({ title: 'dishes' })
+  domController.loadDefaultPage();
 })();

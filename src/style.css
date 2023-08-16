@@ -92,6 +92,7 @@ header {
 .addTaskContainer .closeHeader {
   display: flex;
   justify-content: end;
+  padding: .3rem 0;
 }
 
 .addTaskContainer .closeHeader .short-btn {
@@ -100,8 +101,12 @@ header {
   padding: .4em 1em;
 }
 
-.addTaskContainer .closeHeader .formSection {
+.formSection {
   padding: .5rem 1rem;
+}
+
+.formSection #addTaskForm {
+  background-color: rgb(185, 185, 185);
 }
 
 

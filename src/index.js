@@ -1,4 +1,3 @@
-import dates from 'date-fns';
 import './style.css';
 import pubSub from './pubSub';
 import domController from './domController';

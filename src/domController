@@ -1,4 +1,5 @@
 import pubSub from "./pubSub";
+import { format, formatDistance, formatRelative, parse, parseISO } from 'date-fns'
 
 const domController = (function () {
   let allProjects = [];
@@ -31,7 +32,7 @@ const domController = (function () {
   newProjectBtn.addEventListener('click', displayForm);
   formCancelBtn.addEventListener('click', displayForm);
   closeTaskOverlayBtn.addEventListener('click', toggleAddTaskOverlay)
-  addTaskForm.addEventListener('submit', addTaskToProject);
+  addTaskForm.addEventListener('submit', VerifyAddingTask);
 
 
   //Pubsub
@@ -58,7 +59,6 @@ const domController = (function () {
     formContainer.classList.toggle('hide');
   }
   function toggleAddTaskOverlay() {
-    console.log('click')
     addTaskForm.reset();
     addTaskOverlay.classList.toggle('hide');
   }
@@ -66,8 +66,40 @@ const domController = (function () {
     console.log('updateProjectList:', obj);
     allProjects = obj;
   }
-  function addTaskToProject(e) {
+  function VerifyAddingTask(e) {
     e.preventDefault();
+    const taskTitle = document.querySelector('#taskName').value;
+    const taskDesc = document.querySelector('#descriptionBox').value;
+    let taskDueDate = document.querySelector('#dueDate').value;
+    const taskPriority = document.querySelector('#priority').value;
+    const activeProjectIndex = getActiveProjectIndex(activeProject);
+
+    const date = new Date(taskDueDate.replace(/-/g, '/'))
+    taskDueDate = format(new Date(date), 'MMMM/dd/yyyy');
+
+
+    addTaskToProject({ title: taskTitle, desc: taskDesc, dueDate: taskDueDate, priority: taskPriority }, activeProjectIndex);
+    toggleAddTaskOverlay();
+
+
+    //NOTES-{COMPLETED}:
+    //x-extract data from form
+    //x-find active project index
+    //x-Convert dueDate with NPM package
+    //x-call the addTaskToProject()
+    //x-call toggleTaskOverlay
+  }
+  function addTaskToProject({ title, desc, dueDate, priority }, projectIndex) {
+    console.log('we got projectTitle = ' + title);
+    console.log('we got projectdueDate = ' + dueDate);
+    //add task to project[projectIndex]->(modifies local allProjects array)
+    //'publish' the modifiedarray to todoController
+    //in todo controller, replace old array with the new
+    //delete the LS array and send this one
+    //done
+
+
+
   }
   function addToProjectList(projObj) {
     const projectTitle = projObj.title;

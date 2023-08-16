@@ -45,8 +45,7 @@
     </div>
     <div class="main">
       <div class="content">
-
-        <!-- <div class="color-tile">
+        <div class="color-tile">
           <div class="main-tile">
             <h1>Title</h1>
             <div class="right-side">
@@ -79,9 +78,45 @@
               <div class="btn">Trash</div>
             </div>
           </div>
-        </div> -->
+        </div>
 
 
+      </div>
+      <div class="addTaskOverlay hide">
+        <div class="addTaskContainer">
+          <div class="closeHeader">
+            <div class="short-btn" id="closeTaskContainerBtn">X</div>
+          </div>
+          <div class="formSection">
+            <form id="addTaskForm">
+
+              <div class="form-field">
+                <label for="taskName">Task Name</label>
+                <input type="text" id="taskName" name="taskName" placeholder="eg: Wash Car" required>
+              </div>
+              <div class="form-field">
+                <label for="descriptionBox">Description</label>
+                <textarea id="descriptionBox" name="descriptionBox"
+                  placeholder="eg: Must be done before Sunday!"></textarea>
+              </div>
+              <div class="form-field">
+                <label for="dueDate">Due Date</label>
+                <input type="date" id="dueDate" name="dueDate" required>
+              </div>
+              <div class="form-field">
+                <label for="priority">Priority</label>
+                <select id="priority" name="priority">
+                  <option value="na">-</option>
+                  <option value="low">Low</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              <div class="btn-field">
+                <input type="submit" value="Add Task" id="addTaskFormBtn">
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   </div>

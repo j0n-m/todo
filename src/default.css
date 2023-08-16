@@ -7,8 +7,17 @@
   border-radius: 4px;
 }
 
+.short-btn {
+  display: inline-block;
+  border: 2px solid black;
+  padding: .7rem;
+  cursor: pointer;
+  background-color: rgb(204, 204, 204);
+  border-radius: 4px;
+}
+
 form {
-  outline: 1px solid red;
+  outline: 1px solid black;
   padding: .5rem;
   display: flex;
   flex-direction: column;

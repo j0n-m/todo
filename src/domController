@@ -2,6 +2,7 @@ import pubSub from "./pubSub";
 
 const domController = (function () {
   let allProjects = [];
+  let activeProject;
   // DOM selectors
   const contentContainer = document.querySelector('.content');
   const projectList = document.querySelector('.project-list');
@@ -11,24 +12,40 @@ const domController = (function () {
   const formCancelBtn = document.querySelector('#project-cancel-btn');
   const formTextbox = document.querySelector('#project-title-textbox');
   const errorMsg = document.querySelector('.error-msg');
+  const addTaskOverlay = document.querySelector('.addTaskOverlay');
+  const closeTaskOverlayBtn = document.querySelector('#closeTaskContainerBtn');
+  const addTaskForm = document.querySelector('#addTaskForm');
+
+  //manual event listener for dynamically created elements
+  document.addEventListener('click', function (e) {
+    let addTaskBtn = e.target.closest('#addTaskBtn');
+
+    if (addTaskBtn) {
+      console.log(getActiveProjectIndex(activeProject))
+      toggleAddTaskOverlay();
+    }
+  })
 
   // Event Handlers
   projectAddForm.addEventListener('submit', projectAdd);
   newProjectBtn.addEventListener('click', displayForm);
   formCancelBtn.addEventListener('click', displayForm);
+  closeTaskOverlayBtn.addEventListener('click', toggleAddTaskOverlay)
+  addTaskForm.addEventListener('submit', addTaskToProject);
 
 
   //Pubsub
   pubSub.subscribe('updateProjectList', addToProjectList);
   pubSub.subscribe('error-duplicate', displayError)
   pubSub.subscribe('newTask', updateProjectList);
+  pubSub.subscribe('loadHomePage', loadContent);
 
   // Event Functions
   function render() {
-    let categoryBtns = document.querySelectorAll('.project-btn');
+    let projectBtn = document.querySelectorAll('.project-btn');
     console.log('called render')
-    categoryBtns.forEach(categoryBtn => {
-      categoryBtn.addEventListener('click', changeMainContent);
+    projectBtn.forEach(projectBtn => {
+      projectBtn.addEventListener('click', changeMainContent);
     });
   }
   function projectAdd(e) {
@@ -40,20 +57,30 @@ const domController = (function () {
     formTextbox.value = '';
     formContainer.classList.toggle('hide');
   }
+  function toggleAddTaskOverlay() {
+    console.log('click')
+    addTaskForm.reset();
+    addTaskOverlay.classList.toggle('hide');
+  }
   function updateProjectList(obj) {
     console.log('updateProjectList:', obj);
     allProjects = obj;
+  }
+  function addTaskToProject(e) {
+    e.preventDefault();
   }
   function addToProjectList(projObj) {
     const projectTitle = projObj.title;
     const projectBtn = document.createElement('div');
     projectBtn.classList.add('btn');
     projectBtn.classList.add('project-btn');
+    projectBtn.dataset.projectname = projectTitle;
     projectBtn.textContent = projectTitle;
     console.log('added to projectList:, ', projObj.title);
 
     projectList.appendChild(projectBtn);
     allProjects.push(projObj);
+    console.log('calling render in addToPRoject()')
     render();
   }
   function displayError(msg) {
@@ -64,11 +91,34 @@ const domController = (function () {
     }, 4000)
   }
   function loadContent(index) {
-    const project = allProjects[index];
-    const tasks = project.tasks;
-    contentContainer.replaceChildren();
+    const currentProject = allProjects[index];
 
-    tasks.forEach(task => {
+    activeProject = allProjects[index].getTitle();
+    contentContainer.replaceChildren();
+    if (!currentProject.tasks.length) {
+      const noTaskPara = document.createElement('p')
+      noTaskPara.textContent = 'No tasks :('
+      contentContainer.appendChild(noTaskPara);
+
+    }
+    displayContent(currentProject.tasks);
+  }
+  function displayContent(taskArr) {
+
+    const taskContent = document.createElement('div');
+    taskContent.classList.add('taskContent');
+
+    const addTaskBtn = document.createElement('div')
+    addTaskBtn.classList.add('btn')
+    addTaskBtn.id = 'addTaskBtn';
+    addTaskBtn.classList.add('addTaskBtn');
+    addTaskBtn.dataset.projectindex = getActiveProjectIndex(activeProject);
+    addTaskBtn.textContent = "Add a Task"
+
+    taskContent.appendChild(addTaskBtn);
+    contentContainer.appendChild(taskContent);
+
+    taskArr.forEach(task => {
       const colorTile = document.createElement('div');
       colorTile.classList.add('color-tile');
 
@@ -82,40 +132,26 @@ const domController = (function () {
       colorTile.appendChild(mainTile);
       contentContainer.appendChild(colorTile);
     })
+    console.log('calling render in displayContent')
+    render();
   }
-  function loadDefaultPage() {
-    loadContent(0);
-  }
+
   function changeMainContent(e) {
-    console.log('DOM projects', allProjects);
-    let projectTitle = e.target.textContent;
+    activeProject = e.target.dataset.projectname;
+    let activeProjectIndex = getActiveProjectIndex(activeProject);
 
-    let activeProject = getProjectInfo(projectTitle);
-    console.log('activeProjTasks', activeProject.index);
-
-    loadContent(activeProject.index);
+    loadContent(activeProjectIndex);
   }
-  function getProjectInfo(projectTitle) {
-    let projectIndex;
-    let projectTasks;
-    allProjects.find((project, index) => {
-      if (project.getTitle() == projectTitle) {
-        // console.log('getProjectInfo', project.tasks, index);
-        projectTasks = project.tasks;
-        console.log('projTasks', projectTasks)
-        projectIndex = index;
+  function getActiveProjectIndex(title) {
+    let index;
+    allProjects.forEach((project, projIndex) => {
+      if (project.getTitle() === title) {
+        index = projIndex;
       }
-    })
-    return { title: projectTitle, index: projectIndex, tasks: projectTasks };
+    });
+    return index;
   }
-  function projectHasTasks(index) {
-    if (allProjects[index].tasks.length) {
-      console.log('true there are tasks')
-      return true;
-    }
-    return false;
-  }
-  return { changeMainContent, loadDefaultPage };
+  return { changeMainContent };
 
 })();
 

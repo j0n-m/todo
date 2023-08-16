@@ -93,6 +93,11 @@ const todoController = (function () {
     console.log('adding...', projObj)
     projects.push(projObj);
     pubSub.publish('updateProjectList', projObj);
+    if (projects.length == 1) {
+      let projectIndex = 0;
+      pubSub.publish('loadHomePage', projectIndex);
+    }
+
     console.log('Updated Full List', projects);
   }
   // function validateProjectTasksUpdate(index, updatedTasksObj) {
@@ -193,5 +198,4 @@ const todoController = (function () {
   console.log('-------------------------------------');
   console.log('Projects: ', todoController.displayAllProjects())
   console.log('Projects(ALL):', todoController.projects);
-  domController.loadDefaultPage();
 })();

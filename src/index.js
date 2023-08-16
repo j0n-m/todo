@@ -104,12 +104,12 @@ const todoController = (function () {
 
     pubSub.subscribe('editProjectTask', editProjectTask);
 
+
     function editProjectTask() {
       addToLocalStorage();
       pubSub.publish('overwriteProjectListing', projects);
       pubSub.publish('newTask')
     }
-
     function addToLocalStorage() {
       let tempArray = [];
       localStorage.clear();
@@ -172,9 +172,6 @@ const todoController = (function () {
 
 (() => {
   todoController.initialize();
-  // domController.changeMainContent(todoController.projects[0].getTitle());
-  // todoController.projects[0].addTask({ title: 'Car wash' });
-  // todoController.projects[1].addTask({ title: 'Eat food' });
   console.log('-------------------------------------');
   console.log('Projects: ', todoController.displayAllProjects())
   console.log('Projects(ALL):', todoController.projects);

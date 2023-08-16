@@ -65,7 +65,8 @@ header {
   overflow-y: auto;
 }
 
-.main .addTaskOverlay {
+.main .addTaskOverlay,
+.main .overlay-template {
   display: flex;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.6);
@@ -79,7 +80,8 @@ header {
   overflow-y: auto;
 }
 
-.addTaskOverlay .addTaskContainer {
+.addTaskOverlay .addTaskContainer,
+.template-container {
   background-color: rgb(115, 112, 112);
   border-radius: 12px;
   width: 50%;
@@ -89,13 +91,15 @@ header {
   overflow-y: auto;
 }
 
-.addTaskContainer .closeHeader {
+.addTaskContainer .closeHeader,
+.template-container .closeHeader {
   display: flex;
   justify-content: end;
   padding: .3rem 0;
 }
 
-.addTaskContainer .closeHeader .short-btn {
+.addTaskContainer .closeHeader .short-btn,
+.template-container .closeHeader .short-btn {
   background-color: rgb(187, 36, 36);
   color: white;
   padding: .4em 1em;
@@ -103,6 +107,33 @@ header {
 
 .formSection {
   padding: .5rem 1rem;
+}
+
+.infoSection {
+  background-color: lightgray;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 4px 0;
+  overflow-y: auto;
+}
+
+.info-container {
+  display: flex;
+  overflow-y: auto;
+}
+
+.info-container table {
+  border-collapse: collapse;
+  text-align: center;
+}
+
+.info-container td,
+.info-container th {
+  padding: 8px;
+  border: 1px solid black;
 }
 
 .formSection #addTaskForm {

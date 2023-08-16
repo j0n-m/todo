@@ -20,41 +20,47 @@ const domController = (function () {
   //manual event listener for dynamically created elements
   document.addEventListener('click', function (e) {
     let addTaskBtn = e.target.closest('#addTaskBtn');
+    let projectBtn = e.target.closest('.project-btn');
 
     if (addTaskBtn) {
       console.log(getActiveProjectIndex(activeProject))
       toggleAddTaskOverlay();
     }
+    if (projectBtn) {
+      console.log(projectBtn)
+      changeMainContent(e);
+    }
   })
 
   // Event Handlers
   projectAddForm.addEventListener('submit', projectAdd);
-  newProjectBtn.addEventListener('click', displayForm);
-  formCancelBtn.addEventListener('click', displayForm);
+  newProjectBtn.addEventListener('click', toggleProjectAddForm);
+  formCancelBtn.addEventListener('click', toggleProjectAddForm);
   closeTaskOverlayBtn.addEventListener('click', toggleAddTaskOverlay)
   addTaskForm.addEventListener('submit', VerifyAddingTask);
 
 
   //Pubsub
-  pubSub.subscribe('updateProjectList', addToProjectList);
+  pubSub.subscribe('addToProjectList', addToProjectList);
   pubSub.subscribe('error-duplicate', displayError)
-  pubSub.subscribe('newTask', updateProjectList);
+  pubSub.subscribe('newTask', showTasks);
   pubSub.subscribe('loadHomePage', loadContent);
+  pubSub.subscribe('overwriteProjectListing', overwriteAllProjects);
 
   // Event Functions
-  function render() {
-    let projectBtn = document.querySelectorAll('.project-btn');
-    console.log('called render')
-    projectBtn.forEach(projectBtn => {
-      projectBtn.addEventListener('click', changeMainContent);
-    });
-  }
   function projectAdd(e) {
     e.preventDefault();
     pubSub.publish('addNewProject', { title: formTextbox.value });
-    displayForm();
+    toggleProjectAddForm();
   }
-  function displayForm() {
+  function overwriteAllProjects(projectsArr) {
+    allProjects = [];
+    for (let i = 0; i < projectsArr.length; i++) {
+      allProjects.push(projectsArr[i]);
+    }
+    console.log('overwrite completed')
+  }
+  function toggleProjectAddForm() {
     formTextbox.value = '';
     formContainer.classList.toggle('hide');
   }
@@ -62,9 +68,8 @@ const domController = (function () {
     addTaskForm.reset();
     addTaskOverlay.classList.toggle('hide');
   }
-  function updateProjectList(obj) {
-    console.log('updateProjectList:', obj);
-    allProjects = obj;
+  function showTasks() {
+    loadContent(getActiveProjectIndex(activeProject));
   }
   function VerifyAddingTask(e) {
     e.preventDefault();
@@ -82,19 +87,14 @@ const domController = (function () {
     toggleAddTaskOverlay();
 
 
-    //NOTES-{COMPLETED}:
-    //x-extract data from form
-    //x-find active project index
-    //x-Convert dueDate with NPM package
-    //x-call the addTaskToProject()
-    //x-call toggleTaskOverlay
   }
   function addTaskToProject({ title, desc, dueDate, priority }, projectIndex) {
-    console.log('we got projectTitle = ' + title);
-    console.log('we got projectdueDate = ' + dueDate);
-    //add task to project[projectIndex]->(modifies local allProjects array)
-    //'publish' the modifiedarray to todoController
-    //in todo controller, replace old array with the new
+    // allProjects[projectIndex].tasks.push({ title, desc, dueDate, priority });
+    allProjects[projectIndex].addTask({ title, desc, dueDate, priority });
+    console.log('allProjects', allProjects);
+    //add task to project[projectIndex]->modifies the todo.projects;
+    //'publish' the modifiedarray to todoController.editproject
+    //replaces old array with the new
     //delete the LS array and send this one
     //done
 
@@ -112,8 +112,6 @@ const domController = (function () {
 
     projectList.appendChild(projectBtn);
     allProjects.push(projObj);
-    console.log('calling render in addToPRoject()')
-    render();
   }
   function displayError(msg) {
     errorMsg.textContent = msg;
@@ -123,9 +121,8 @@ const domController = (function () {
     }, 4000)
   }
   function loadContent(index) {
-    const currentProject = allProjects[index];
-
-    activeProject = allProjects[index].getTitle();
+    let currentProject = allProjects[index];
+    activeProject = currentProject.getTitle();
     contentContainer.replaceChildren();
     if (!currentProject.tasks.length) {
       const noTaskPara = document.createElement('p')
@@ -164,8 +161,6 @@ const domController = (function () {
       colorTile.appendChild(mainTile);
       contentContainer.appendChild(colorTile);
     })
-    console.log('calling render in displayContent')
-    render();
   }
 
   function changeMainContent(e) {

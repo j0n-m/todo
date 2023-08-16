@@ -34,7 +34,7 @@ function Task(propObj) {
     return priority;
   }
 
-  return { setTitle, getTitle, setDescription, getDescription, setDueDate, getDueDate, setPriority, getPriority, title };
+  return { setTitle, getTitle, setDescription, getDescription, setDueDate, getDueDate, setPriority, getPriority, title, description, dueDate, priority };
 }
 function Project(propObj) {
   let title = propObj.title;
@@ -47,8 +47,8 @@ function Project(propObj) {
     return title;
   }
   function addTask(taskObj) {
-    tasks.push(Task(taskObj));
-    pubSub.publish('updateLocalStorage_addTask', { task: taskObj, parent: this.title });
+    this.tasks.push(Task(taskObj));
+    pubSub.publish('editProjectTask');
   }
   return { tasks, title, setTitle, getTitle, addTask };
 }
@@ -77,8 +77,8 @@ const todoController = (function () {
     return projectList;
   }
   function validateProject(projObj) {
+    console.log('before pushing project', projects);
     projObj = Project(projObj);
-    // projObj = Object.assign(Project({}), projObj);
     let status = utility.hasDuplicateTitle(projects, projObj);
     if (status) {
       console.log('Cannot have duplicate names');
@@ -86,12 +86,12 @@ const todoController = (function () {
       return;
     }
     addProject(projObj);
-    utility.addToLocalStorage(projObj);
+    utility.addToLocalStorage();
   }
   function addProject(projObj) {
     console.log('adding...', projObj)
     projects.push(projObj);
-    pubSub.publish('updateProjectList', projObj);
+    pubSub.publish('addToProjectList', projObj);
     if (projects.length == 1) {
       let projectIndex = 0;
       pubSub.publish('loadHomePage', projectIndex);
@@ -99,46 +99,27 @@ const todoController = (function () {
 
     console.log('Updated Full List', projects);
   }
-  // function validateProjectTasksUpdate(index, updatedTasksObj) {
-  //   updatedTasksObj = Task(updatedTasksObj)
-  //   updateProjectTasks(index, updatedTasksObj)
-  // }
-  // function updateProjectTasks(index, updatedObj) {
-  //   projects[index].tasks.push(updatedObj);
-  //   pubSub.publish('newTask', projects);
-  // }
   const utility = (function () {
     let projectName = 'project';
 
-    pubSub.subscribe('updateLocalStorage_addTask', updateLocalStorage_addTask);
-    function updateLocalStorage_addTask({ task, parent }) {
-      // let newTaskObj = Task(taskObj.task);
-      let parsedArray = JSON.parse(localStorage.getItem(projectName));
-      parsedArray.forEach(project => {
-        if (project.title == parent) {
-          project.tasks.push(Task(task));
-        }
-      })
-      // console.log('parray', parsedArray)
-      localStorage.setItem(projectName, JSON.stringify(parsedArray));
-    }
-    function addToLocalStorage(obj) {
-      let tempArray = [];
-      if (!localStorageHasItems(projectName)) {
-        tempArray.push(obj);
-        localStorage.setItem(projectName, JSON.stringify(tempArray));
-        console.log(`Added ${obj} to localstorage`);
-        return;
-      }
-      const lastStored = getLastStoredLS(); //prevents from adding duplicate entries
-      if (lastStored.title == obj.title) return;
+    pubSub.subscribe('editProjectTask', editProjectTask);
 
-      //append new obj to array
-      let storedArray = JSON.parse(localStorage.getItem(projectName));
-      tempArray = tempArray.concat(storedArray, obj);
-      localStorage.setItem('project', JSON.stringify(tempArray));
-      console.log('updated localstorage');
+    function editProjectTask() {
+      addToLocalStorage();
+      pubSub.publish('overwriteProjectListing', projects);
+      pubSub.publish('newTask')
     }
+
+    function addToLocalStorage() {
+      let tempArray = [];
+      localStorage.clear();
+
+      for (let i = 0; i < projects.length; i++) {
+        tempArray.push(projects[i]);
+      }
+      localStorage.setItem(projectName, JSON.stringify(tempArray));
+    }
+
     function getLastStoredLS() {
       let parsedObj = JSON.parse(localStorage.getItem(projectName));
       let parsedArrayLastObj = parsedObj.length - 1;

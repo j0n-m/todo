@@ -4,6 +4,7 @@ import { format, formatDistance, formatRelative, parse, parseISO } from 'date-fn
 const domController = (function () {
   let allProjects = [];
   let activeProject;
+  let history;
   // DOM selectors
   const contentContainer = document.querySelector('.content');
   const projectList = document.querySelector('.project-list');
@@ -18,6 +19,10 @@ const domController = (function () {
   const addTaskForm = document.querySelector('#addTaskForm');
   const templateOverlay = document.querySelector('.overlay-template')
   const closeTemplateOverlayBtn = document.querySelector('#closeTemplateOverlayBtn');
+  const sortAllTasksBtn = document.querySelector('.allTasks');
+  // const sortUpcomingTasksBtn = document.querySelector('.upcomingTasks');
+  // const sortTodayTasksBtn = document.querySelector('.todayTasks');
+
 
   //manual event listener for dynamically created elements
   document.addEventListener('click', function (e) {
@@ -35,11 +40,13 @@ const domController = (function () {
     }
     if (taskDeleteBtn) {
       const taskIndex = Number(taskDeleteBtn.dataset['taskindex']);
-      deleteTaskFromProject(taskIndex);
+      const projectIndex = Number(taskDeleteBtn.dataset['projectindex']);
+      deleteTaskFromProject(taskIndex, projectIndex);
     }
     if (taskDetailsBtn) {
       const taskIndex = Number(taskDetailsBtn.dataset['taskindex']);
-      showTaskDetails(taskIndex);
+      const projectIndex = Number(taskDetailsBtn.dataset['projectindex']);
+      showTaskDetails(taskIndex, projectIndex);
     }
   })
 
@@ -50,6 +57,7 @@ const domController = (function () {
   closeTaskOverlayBtn.addEventListener('click', toggleAddTaskOverlay)
   addTaskForm.addEventListener('submit', VerifyAddingTask);
   closeTemplateOverlayBtn.addEventListener('click', toggleTemplateOverlay)
+  sortAllTasksBtn.addEventListener('click', sortAllTasks);
 
 
   //Pubsub
@@ -84,7 +92,77 @@ const domController = (function () {
     templateOverlay.classList.toggle('hide')
   }
   function showTasks() {
-    loadContent(getActiveProjectIndex(activeProject));
+    if (history) {
+      history();
+    } else {
+      loadContent(getActiveProjectIndex(activeProject));
+    }
+  }
+  function sortAllTasks() {
+    history = sortAllTasks;
+    console.log('trying to display all tasks...');
+    contentContainer.replaceChildren();
+    for (let i = 0; i < allProjects.length; i++) {
+      displayTilesOnly(allProjects[i].tasks, i);
+    }
+
+
+    //for each iteration of the projects array
+    //access the tasks array
+
+    //if dateFilter =='all'
+    //-displays all tasks of every project
+    //if dueDate == dateFilter
+    //-create the dynamic elements and append
+    //else if d
+
+  }
+  function displayTilesOnly(taskArr, projectIndex) {
+    taskArr.forEach((task, i) => {
+      const colorTile = document.createElement('div');
+      colorTile.classList.add('color-tile', 'priority-' + task.priority);
+
+      const mainTile = document.createElement('div');
+      mainTile.classList.add('main-tile');
+
+      const h1Title = document.createElement('h1')
+      h1Title.textContent = task.getTitle();
+
+      const rightSide = document.createElement('div')
+      rightSide.classList.add('right-side')
+
+      const detailsBtn = document.createElement('div')
+      detailsBtn.classList.add('btn', 'taskDetailsBtn')
+      detailsBtn.textContent = 'Details';
+      detailsBtn.dataset.taskindex = +i;
+      detailsBtn.dataset.projectindex = +projectIndex;
+
+      const dueDateText = document.createElement('h3');
+      dueDateText.textContent = task.getDueDate();
+
+      const editBtn = document.createElement('div');
+      editBtn.classList.add('btn');
+      editBtn.textContent = 'Edit';
+      editBtn.dataset.taskindex = i;
+      editBtn.dataset.projectindex = +projectIndex;
+
+      const deleteTaskBtn = document.createElement('div');
+      deleteTaskBtn.classList.add('btn', 'taskDeleteBtn');
+      deleteTaskBtn.textContent = 'Delete';
+      deleteTaskBtn.dataset.taskindex = i;
+      deleteTaskBtn.dataset.projectindex = +projectIndex;
+
+      rightSide.appendChild(detailsBtn);
+      rightSide.appendChild(dueDateText);
+      rightSide.appendChild(editBtn);
+      rightSide.appendChild(deleteTaskBtn);
+
+      mainTile.appendChild(h1Title);
+      mainTile.appendChild(rightSide);
+
+      colorTile.appendChild(mainTile);
+      contentContainer.appendChild(colorTile);
+    });
   }
   function VerifyAddingTask(e) {
     e.preventDefault();
@@ -103,9 +181,8 @@ const domController = (function () {
 
   }
 
-  // ------------------------------------
-  function showTaskDetails(taskIndex) {
-    const activeProjectIndex = getActiveProjectIndex(activeProject);
+  function showTaskDetails(taskIndex, currentProjectIndex) {
+    const activeProjectIndex = currentProjectIndex;
     const currentTask = allProjects[activeProjectIndex].tasks[taskIndex];
     let overlayInfoSection = document.querySelector('.infoSection');
     console.log(currentTask.title);
@@ -113,7 +190,7 @@ const domController = (function () {
     overlayInfoSection.replaceChildren(); //clear contents of the info section
 
     const h2ProjectTitle = document.createElement('h2');
-    h2ProjectTitle.textContent = `Project: '${activeProject}'`;
+    h2ProjectTitle.textContent = `Project: '${allProjects[activeProjectIndex].getTitle()}'`;
     const infoContainer = document.createElement('div');
     infoContainer.classList.add('info-container');
 
@@ -149,31 +226,11 @@ const domController = (function () {
     overlayInfoSection.appendChild(h2ProjectTitle);
     overlayInfoSection.appendChild(infoContainer);
 
-    /*
-    <div class="info-container">
-              <table>
-                <tr>
-                  <th>Property</th>
-                  <th>Value</th>
-                </tr>
-                <tr>
-                  <td>title</td>
-                  <td>Wash Car</td>
-                </tr>
-              </table>
-            </div>
-    */
-
-
-    //clear the overlay children
-    //dynamically append the task data to createElement()
-    //display overlay
     toggleTemplateOverlay();
   }
 
-  // ------------------------------------
-  function deleteTaskFromProject(taskIndex) {
-    const currentProjectIndex = getActiveProjectIndex(activeProject);
+  function deleteTaskFromProject(taskIndex, projectIndex) {
+    const currentProjectIndex = projectIndex;
 
     console.log('task to delete->', allProjects[currentProjectIndex].tasks[taskIndex])
     allProjects[currentProjectIndex].tasks.splice(taskIndex, 1);
@@ -223,6 +280,9 @@ const domController = (function () {
     const taskContent = document.createElement('div');
     taskContent.classList.add('taskContent');
 
+    // const projectTitle = document.createElement('h2');
+    // projectTitle.textContent = activeProject;
+
     const addTaskBtn = document.createElement('div')
     addTaskBtn.classList.add('btn')
     addTaskBtn.id = 'addTaskBtn';
@@ -230,6 +290,7 @@ const domController = (function () {
     addTaskBtn.dataset.projectindex = getActiveProjectIndex(activeProject);
     addTaskBtn.textContent = "Add a Task"
 
+    // taskContent.appendChild(projectTitle);
     taskContent.appendChild(addTaskBtn);
     contentContainer.appendChild(taskContent);
 
@@ -250,6 +311,7 @@ const domController = (function () {
       detailsBtn.classList.add('btn', 'taskDetailsBtn')
       detailsBtn.textContent = 'Details';
       detailsBtn.dataset.taskindex = +i;
+      detailsBtn.dataset.projectindex = getActiveProjectIndex(activeProject);
 
       const dueDateText = document.createElement('h3');
       dueDateText.textContent = task.getDueDate();
@@ -258,11 +320,13 @@ const domController = (function () {
       editBtn.classList.add('btn');
       editBtn.textContent = 'Edit';
       editBtn.dataset.taskindex = i;
+      detailsBtn.dataset.projectindex = getActiveProjectIndex(activeProject);
 
       const deleteTaskBtn = document.createElement('div');
       deleteTaskBtn.classList.add('btn', 'taskDeleteBtn');
       deleteTaskBtn.textContent = 'Delete';
       deleteTaskBtn.dataset.taskindex = i;
+      detailsBtn.dataset.projectindex = getActiveProjectIndex(activeProject);
 
       rightSide.appendChild(detailsBtn);
       rightSide.appendChild(dueDateText);
@@ -278,8 +342,12 @@ const domController = (function () {
   }
 
   function changeMainContent(e) {
+    history = '';
     activeProject = e.target.dataset.projectname;
     let activeProjectIndex = getActiveProjectIndex(activeProject);
+
+
+    console.log('activeProject', activeProject);
 
     loadContent(activeProjectIndex);
   }

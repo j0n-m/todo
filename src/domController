@@ -1,10 +1,10 @@
 import pubSub from "./pubSub";
-import { format, formatDistance, formatRelative, parse, parseISO } from 'date-fns'
+import { format } from 'date-fns';
 
 const domController = (function () {
   let allProjects = [];
   let activeProject;
-  let history;
+  let history = "";
   // DOM selectors
   const contentContainer = document.querySelector('.content');
   const projectList = document.querySelector('.project-list');
@@ -22,8 +22,6 @@ const domController = (function () {
   const sortAllTasksBtn = document.querySelector('.allTasks');
   // const sortUpcomingTasksBtn = document.querySelector('.upcomingTasks');
   // const sortTodayTasksBtn = document.querySelector('.todayTasks');
-
-
   //manual event listener for dynamically created elements
   document.addEventListener('click', function (e) {
     let addTaskBtn = e.target.closest('#addTaskBtn');
@@ -49,7 +47,6 @@ const domController = (function () {
       showTaskDetails(taskIndex, projectIndex);
     }
   })
-
   // Event Handlers
   projectAddForm.addEventListener('submit', projectAdd);
   newProjectBtn.addEventListener('click', toggleProjectAddForm);
@@ -58,7 +55,6 @@ const domController = (function () {
   addTaskForm.addEventListener('submit', VerifyAddingTask);
   closeTemplateOverlayBtn.addEventListener('click', toggleTemplateOverlay)
   sortAllTasksBtn.addEventListener('click', sortAllTasks);
-
 
   //Pubsub
   pubSub.subscribe('addToProjectList', addToProjectList);
@@ -134,8 +130,8 @@ const domController = (function () {
       const detailsBtn = document.createElement('div')
       detailsBtn.classList.add('btn', 'taskDetailsBtn')
       detailsBtn.textContent = 'Details';
-      detailsBtn.dataset.taskindex = +i;
-      detailsBtn.dataset.projectindex = +projectIndex;
+      detailsBtn.dataset.taskindex = i;
+      detailsBtn.dataset.projectindex = projectIndex;
 
       const dueDateText = document.createElement('h3');
       dueDateText.textContent = task.getDueDate();
@@ -269,7 +265,7 @@ const domController = (function () {
     contentContainer.replaceChildren();
     if (!currentProject.tasks.length) {
       const noTaskPara = document.createElement('p')
-      noTaskPara.textContent = 'No tasks :('
+      noTaskPara.textContent = 'No tasks :(';
       contentContainer.appendChild(noTaskPara);
 
     }

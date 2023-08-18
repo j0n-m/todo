@@ -1,4 +1,4 @@
-const pubSub = (function () {
+const pubSub = (function eventHandler() {
   const events = {};
   function subscribe(eventName, func) {
     if (!events[eventName]) {
@@ -8,12 +8,12 @@ const pubSub = (function () {
   }
   function publish(eventName, paramData) {
     if (events[eventName]) {
-      events[eventName].forEach(e => {
+      events[eventName].forEach((e) => {
         e(paramData);
       });
     }
   }
-  return { subscribe, publish }
-})();
+  return { subscribe, publish };
+}());
 
 export default pubSub;

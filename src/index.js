@@ -2,7 +2,7 @@ import './style.css';
 import pubSub from './pubSub';
 import domController from './domController';
 
-function Task(propObj) {
+export default function Task(propObj) {
   let { title } = propObj;
   let { description } = propObj;
   let { dueDate } = propObj;
@@ -183,7 +183,7 @@ const todoController = (function () {
 }());
 
 (() => {
-  domController();
+  // domController();
   todoController.initialize();
   console.log('-------------------------------------');
   console.log('Projects: ', todoController.displayAllProjects());

@@ -66,7 +66,8 @@ header {
 }
 
 .main .addTaskOverlay,
-.main .overlay-template {
+.main .overlay-template,
+.main .editTaskOverlay {
   display: flex;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.6);
@@ -81,7 +82,8 @@ header {
 }
 
 .addTaskOverlay .addTaskContainer,
-.template-container {
+.template-container,
+.editTaskContainer {
   background-color: rgb(115, 112, 112);
   border-radius: 12px;
   width: 50%;
@@ -92,14 +94,16 @@ header {
 }
 
 .addTaskContainer .closeHeader,
-.template-container .closeHeader {
+.template-container .closeHeader,
+.editTaskContainer .closeHeader {
   display: flex;
   justify-content: end;
   padding: .3rem 0;
 }
 
 .addTaskContainer .closeHeader .short-btn,
-.template-container .closeHeader .short-btn {
+.template-container .closeHeader .short-btn,
+.editTaskContainer .closeHeader .short-btn {
   background-color: rgb(187, 36, 36);
   color: white;
   padding: .4em 1em;
@@ -136,7 +140,8 @@ header {
   border: 1px solid black;
 }
 
-.formSection #addTaskForm {
+.formSection #addTaskForm,
+.formSection #editTaskForm {
   background-color: rgb(185, 185, 185);
 }
 
@@ -152,7 +157,8 @@ header {
   margin-top: 2rem;
 }
 
-.formSection .btn-field #addTaskFormBtn {
+.formSection .btn-field #addTaskFormBtn,
+.formSection .btn-field #editTaskFormBtn {
   border-radius: 6px;
   width: max-content;
   padding: 0.5em 1em;

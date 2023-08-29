@@ -1,5 +1,6 @@
 import pubSub from "./pubSub";
-import { format } from 'date-fns';
+import Task from "./index"
+import { format, formatRelative, addDays } from 'date-fns';
 
 const domController = (function () {
   let allProjects = [];
@@ -15,19 +16,23 @@ const domController = (function () {
   const formTextbox = document.querySelector('#project-title-textbox');
   const errorMsg = document.querySelector('.error-msg');
   const addTaskOverlay = document.querySelector('.addTaskOverlay');
+  const editTaskOverlay = document.querySelector('.editTaskOverlay');
   const closeTaskOverlayBtn = document.querySelector('#closeTaskContainerBtn');
+  const closeEditTaskOverlay = document.querySelector('#closeEditTaskContainerBtn');
   const addTaskForm = document.querySelector('#addTaskForm');
+  const editTaskForm = document.querySelector('#editTaskForm');
   const templateOverlay = document.querySelector('.overlay-template')
   const closeTemplateOverlayBtn = document.querySelector('#closeTemplateOverlayBtn');
   const sortAllTasksBtn = document.querySelector('.allTasks');
-  // const sortUpcomingTasksBtn = document.querySelector('.upcomingTasks');
-  // const sortTodayTasksBtn = document.querySelector('.todayTasks');
+  const sortUpcomingTasksBtn = document.querySelector('.upcomingTasks');
+  const sortTodayTasksBtn = document.querySelector('.todayTasks');
   //manual event listener for dynamically created elements
   document.addEventListener('click', function (e) {
     let addTaskBtn = e.target.closest('#addTaskBtn');
     let projectBtn = e.target.closest('.project-btn');
     let taskDeleteBtn = e.target.closest('.taskDeleteBtn');
     let taskDetailsBtn = e.target.closest('.taskDetailsBtn');
+    let taskEditBtn = e.target.closest('.taskEditBtn');
 
     if (addTaskBtn) {
       console.log(getActiveProjectIndex(activeProject))
@@ -46,6 +51,9 @@ const domController = (function () {
       const projectIndex = Number(taskDetailsBtn.dataset['projectindex']);
       showTaskDetails(taskIndex, projectIndex);
     }
+    if (taskEditBtn) {
+      handleEditTask(e);
+    }
   })
   // Event Handlers
   projectAddForm.addEventListener('submit', projectAdd);
@@ -53,8 +61,12 @@ const domController = (function () {
   formCancelBtn.addEventListener('click', toggleProjectAddForm);
   closeTaskOverlayBtn.addEventListener('click', toggleAddTaskOverlay)
   addTaskForm.addEventListener('submit', VerifyAddingTask);
+  editTaskForm?.addEventListener('submit', VerifyEditTask);
   closeTemplateOverlayBtn.addEventListener('click', toggleTemplateOverlay)
   sortAllTasksBtn.addEventListener('click', sortAllTasks);
+  sortUpcomingTasksBtn.addEventListener('click', sortUpcommingTasks);
+  sortTodayTasksBtn.addEventListener('click', sortTodayTasks);
+  closeEditTaskOverlay.addEventListener('click', toggleEditTaskOverlay);
 
   //Pubsub
   pubSub.subscribe('addToProjectList', addToProjectList);
@@ -65,9 +77,9 @@ const domController = (function () {
 
   // Event Functions
   function projectAdd(e) {
-    e.preventDefault();
     pubSub.publish('addNewProject', { title: formTextbox.value });
     toggleProjectAddForm();
+    e.preventDefault();
   }
   function overwriteAllProjects(projectsArr) {
     allProjects = [];
@@ -83,6 +95,10 @@ const domController = (function () {
   function toggleAddTaskOverlay() {
     addTaskForm.reset();
     addTaskOverlay.classList.toggle('hide');
+  }
+  function toggleEditTaskOverlay() {
+    editTaskForm.reset();
+    editTaskOverlay.classList.toggle('hide');
   }
   function toggleTemplateOverlay() {
     templateOverlay.classList.toggle('hide')
@@ -101,17 +117,38 @@ const domController = (function () {
     for (let i = 0; i < allProjects.length; i++) {
       displayTilesOnly(allProjects[i].tasks, i);
     }
+  }
+  function sortUpcommingTasks() {
+    history = sortUpcommingTasks;
+    console.log('trying to display upcomming tasks...');
+    contentContainer.replaceChildren();
+    const currentDay = format(new Date(), 'P');
+    const sevenDaysAhead = formatRelative(addDays(new Date(), 7), new Date())
 
+    sortAllTasks();
+    const allTasks = [...contentContainer.children]
+    allTasks.forEach((tile) => {
+      let currentTileDate = tile.querySelector('h3');
+      let formatedDueDate = format(new Date(currentTileDate.textContent), 'P');
+      if (!(formatedDueDate <= sevenDaysAhead && formatedDueDate >= currentDay)) {
+        tile.classList.add('hide');
+      }
+    })
+  }
+  function sortTodayTasks() {
+    history = sortTodayTasks;
+    const currentDay = format(new Date(), 'P');
+    contentContainer.replaceChildren();
+    sortAllTasks();
 
-    //for each iteration of the projects array
-    //access the tasks array
-
-    //if dateFilter =='all'
-    //-displays all tasks of every project
-    //if dueDate == dateFilter
-    //-create the dynamic elements and append
-    //else if d
-
+    const allTasks = [...contentContainer.children];
+    allTasks.forEach((tile) => {
+      let currentTileDate = tile.querySelector('h3');
+      let formatedDueDate = format(new Date(currentTileDate.textContent), 'P');
+      if (!(formatedDueDate == currentDay)) {
+        tile.classList.add('hide');
+      }
+    })
   }
   function displayTilesOnly(taskArr, projectIndex) {
     taskArr.forEach((task, i) => {
@@ -137,7 +174,7 @@ const domController = (function () {
       dueDateText.textContent = task.getDueDate();
 
       const editBtn = document.createElement('div');
-      editBtn.classList.add('btn');
+      editBtn.classList.add('btn', 'taskEditBtn');
       editBtn.textContent = 'Edit';
       editBtn.dataset.taskindex = i;
       editBtn.dataset.projectindex = +projectIndex;
@@ -160,6 +197,27 @@ const domController = (function () {
       contentContainer.appendChild(colorTile);
     });
   }
+  function VerifyEditTask(e) {
+    e.preventDefault();
+    const taskTitle = document.querySelector('#editTaskForm #taskName').value;
+    const taskDesc = document.querySelector('#editTaskForm #descriptionBox').value;
+    let taskDueDate = document.querySelector('#editTaskForm #dueDate').value;
+    const taskPriority = document.querySelector('#editTaskForm #priority').value;
+    const editBtn = document.querySelector('#editTaskFormBtn');
+    const projectIndex = editBtn.dataset.projectindex;
+    const taskIndex = editBtn.dataset.taskindex;
+
+
+    const date = new Date(taskDueDate.replace(/-/g, '/'))
+    taskDueDate = format(new Date(date), 'M/dd/yyyy');
+
+    allProjects[projectIndex].tasks.splice(taskIndex, 1)
+    addTaskToProject({ title: taskTitle, description: taskDesc, dueDate: taskDueDate, priority: taskPriority }, projectIndex);
+    console.log('submitted');
+    console.log(taskTitle)
+    console.log(allProjects)
+    toggleEditTaskOverlay();
+  }
   function VerifyAddingTask(e) {
     e.preventDefault();
     const taskTitle = document.querySelector('#taskName').value;
@@ -172,8 +230,32 @@ const domController = (function () {
     taskDueDate = format(new Date(date), 'M/dd/yyyy');
 
 
-    addTaskToProject({ title: taskTitle, desc: taskDesc, dueDate: taskDueDate, priority: taskPriority }, activeProjectIndex);
+    addTaskToProject({ title: taskTitle, description: taskDesc, dueDate: taskDueDate, priority: taskPriority }, activeProjectIndex);
     toggleAddTaskOverlay();
+
+  }
+  function handleEditTask(e) {
+    const taskIndex = e.target.dataset.taskindex;
+    const projectIndex = e.target.dataset.projectindex;
+    let currentTask = allProjects[projectIndex].tasks[taskIndex];
+
+    const editTaskFormBtn = document.querySelector('#editTaskFormBtn')
+    editTaskFormBtn.dataset.projectindex = projectIndex;
+    editTaskFormBtn.dataset.taskindex = taskIndex;
+
+    let taskNameBox = document.querySelector('#editTaskForm #taskName');
+    let descriptionBox = document.querySelector('#editTaskForm #descriptionBox');
+    let dueDateBox = document.querySelector('#editTaskForm #dueDate');
+    let priorityBox = document.querySelector('#editTaskForm #priority');
+
+    toggleEditTaskOverlay();
+    taskNameBox.value = allProjects[projectIndex].tasks[taskIndex].getTitle();
+    descriptionBox.value = allProjects[projectIndex].tasks[taskIndex].description ?? "";
+
+    let convertDate = format(new Date(currentTask.dueDate), "yyyy-MM-dd");
+    dueDateBox.value = convertDate
+
+    priorityBox.value = currentTask.getPriority();
 
   }
 
@@ -227,6 +309,7 @@ const domController = (function () {
 
   function deleteTaskFromProject(taskIndex, projectIndex) {
     const currentProjectIndex = projectIndex;
+    console.log(currentProjectIndex)
 
     console.log('task to delete->', allProjects[currentProjectIndex].tasks[taskIndex])
     allProjects[currentProjectIndex].tasks.splice(taskIndex, 1);
@@ -235,11 +318,12 @@ const domController = (function () {
   }
 
 
-  function addTaskToProject({ title, desc, dueDate, priority }, projectIndex) {
-    // allProjects[projectIndex].tasks.push({ title, desc, dueDate, priority });
-    allProjects[projectIndex].addTask({ title, desc, dueDate, priority });
+  function addTaskToProject({ title, description, dueDate, priority }, projectIndex) {
+    // allProjects[projectIndex].tasks.push({ title, description, dueDate, priority });
+    allProjects[projectIndex].addTask({ title, description, dueDate, priority });
     console.log('allProjects', allProjects);
   }
+
   function addToProjectList(projObj) {
     const projectTitle = projObj.title;
     const projectBtn = document.createElement('div');
@@ -313,16 +397,16 @@ const domController = (function () {
       dueDateText.textContent = task.getDueDate();
 
       const editBtn = document.createElement('div');
-      editBtn.classList.add('btn');
+      editBtn.classList.add('btn', 'taskEditBtn');
       editBtn.textContent = 'Edit';
       editBtn.dataset.taskindex = i;
-      detailsBtn.dataset.projectindex = getActiveProjectIndex(activeProject);
+      editBtn.dataset.projectindex = getActiveProjectIndex(activeProject);
 
       const deleteTaskBtn = document.createElement('div');
       deleteTaskBtn.classList.add('btn', 'taskDeleteBtn');
       deleteTaskBtn.textContent = 'Delete';
       deleteTaskBtn.dataset.taskindex = i;
-      detailsBtn.dataset.projectindex = getActiveProjectIndex(activeProject);
+      deleteTaskBtn.dataset.projectindex = getActiveProjectIndex(activeProject);
 
       rightSide.appendChild(detailsBtn);
       rightSide.appendChild(dueDateText);
